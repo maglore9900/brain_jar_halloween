@@ -1,5 +1,5 @@
-from modules import adapter, speak_modified as speak
-from prompts import prompts
+from modules import adapter, speak
+from prompts import prompts, dialogue
 import environ
 import random
 
@@ -20,16 +20,17 @@ while True:
         if text and env("WAKE_WORD").lower() in text.lower() and env("CHARACTER").lower() in text.lower():
             if "wake" in text.lower():
                 print("Waking up...")
-                spk.stream("Astra Mor Technician, who approaches? ... A new test subject?")
+                # spk.stream(random.choice(dialogue.wake))
+                spk.stream(f"{random.choice(dialogue.wake)} ... Astra Mor Technician, who approaches? ... A new test subject?")
                 while answer is False:
                     decision = spk.transcribe()
                     if decision:
                         if "yes" in decision.lower():
                             spk.stream(f"Test subject {random.randint(111,888)}, what is your name and favorite monster?")
-                            while True:
+                            while answer is False:
                                 name_monster = spk.transcribe()
                                 if name_monster:
-                                    spk.stream("Hmmm ... let me think...")
+                                    spk.stream(random.choice(dialogue.pause))
                                     print(name_monster)
                                     nickname = "create a cool nickname which includes: " + name_monster
                                     response = ad.llm_chat.invoke(char_prompt.format(query=nickname))
@@ -37,13 +38,21 @@ while True:
                                         print(response.content)
                                         if env("SPEECH_ENABLED").lower() == "true":
                                             spk.stream(response.content)
-                                            answer = True
+                                        answer = True
                         elif "no" in decision.lower():
-                            pass
-                            answer = True
-                        elif "exit" in decision.lower():
-                            answer = True
+                            spk.stream("Astra Mor Technician, ask you're question already!")
+                            question = spk.transcribe()
+                            if question:
+                                response = ad.llm_chat.invoke(char_prompt.format(query=question))
+                                if response:
+                                    spk.stream(random.choice(dialogue.pause))
+                                    print(response.content)
+                                    if env("SPEECH_ENABLED").lower() == "true":
+                                        spk.stream(response.content)
+                                    answer = True
                         else:
                             spk.stream("Please answer yes or no.")
+        elif text and "exit" in text.lower():
+            break
 
 

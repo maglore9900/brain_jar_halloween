@@ -1,3 +1,4 @@
+
 import noisereduce as nr
 import numpy as np
 import pyaudio
@@ -10,6 +11,7 @@ import requests
 from pydub import AudioSegment
 import io
 import wave
+from collections import deque
 
 os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 
@@ -22,209 +24,99 @@ class Speak:
         self.model_name = env("LISTEN_MODEL".lower(), default="whisper")
         self.sample_rate = 16000
         self.chunk_size = 1024
-        self.noise_threshold = 500
-        
-        
+        self.noise_threshold = 500  # Initial placeholder for noise threshold
+        self.recent_noise_levels = deque(maxlen=30)  # Track recent noise levels for dynamic adjustment
+        self.voice = env("ALL_TALK_VOICE")
+        self.silence = float(env("TIME_SILENCE"))
+
         # Initialize transcription models
         if self.model_name == "whisper":
             from faster_whisper import WhisperModel
             self.whisper_model_path = "large-v2"
-            self.whisper_model = WhisperModel(self.whisper_model_path, device="cuda")  # Mvidia GPU mode
-            # self.whisper_model = WhisperModel(self.whisper_model_path, device="cpu")  # CPU mode
+            self.whisper_model = WhisperModel(self.whisper_model_path, device="cuda")  # Nvidia GPU mode
         else:
             self.recognizer = sr.Recognizer()
 
-    def listen_to_microphone(self, time_listen=10):
-        """Function to listen to the microphone input and return raw audio data."""
+    def adjust_noise_threshold(self, audio_chunk):
+        """Dynamically adjust the noise threshold based on the ambient noise levels of the current chunk."""
+        noise_level = np.abs(audio_chunk).mean()
+        self.recent_noise_levels.append(noise_level)
+        
+        # Calculate a new threshold based on recent noise levels (running average)
+        self.noise_threshold = np.mean(self.recent_noise_levels)
+
+    def listen_to_microphone(self):
+        """Function to listen to the microphone input and return raw audio data after applying dynamic noise reduction."""
         p = pyaudio.PyAudio()
         stream = p.open(format=pyaudio.paInt16, channels=1, rate=self.sample_rate, input=True, frames_per_buffer=self.chunk_size)
         stream.start_stream()
         print("Listening...")
 
         audio_data = b""
-        ambient_noise_data = b""
+        silence_duration = self.silence  # Time of silence in seconds before stopping
+        silence_counter = 0
+        detected_speech = False
         
-        try:
-            for i in range(int(self.sample_rate / self.chunk_size * time_listen)):
-                audio_chunk = stream.read(self.chunk_size)
-                audio_data += audio_chunk
+        while True:
+            data = stream.read(self.chunk_size)
+            audio_data += data
 
-                # Capture ambient noise in the first 2 seconds
-                if i < int(self.sample_rate / self.chunk_size * 1):  # First 1 seconds
-                    ambient_noise_data += audio_chunk
+            # Convert to numpy array for noise reduction and dynamic adjustment
+            np_data = np.frombuffer(data, dtype=np.int16)
+            
+            # Adjust noise threshold dynamically using the current chunk
+            self.adjust_noise_threshold(np_data)
+            
+            # Reduce noise in the current chunk
+            reduced_noise_data = nr.reduce_noise(y=np_data, sr=self.sample_rate)
+            
+            # Check if speech is detected based on the dynamically adjusted noise threshold
+            if np.abs(reduced_noise_data).mean() > self.noise_threshold:
+                detected_speech = True
+                silence_counter = 0  # Reset silence counter when speech is detected
+            elif detected_speech:  # If we already detected speech and now there is silence
+                silence_counter += self.chunk_size / self.sample_rate
+                if silence_counter >= silence_duration:
+                    print("Silence detected. Stopping.")
+                    break
+        
+        stream.stop_stream()
+        stream.close()
+        p.terminate()
 
-        finally:
-            stream.stop_stream()
-            stream.close()
-            p.terminate()
+        return audio_data
 
-        return audio_data, ambient_noise_data
-    
-    def apply_noise_cancellation(self, audio_data, ambient_noise):
-        """Apply noise cancellation to the given audio data, using ambient noise from the first 2 seconds."""
-        # Convert to NumPy array (normalize to [-1, 1])
-        audio_np = np.frombuffer(audio_data, np.int16).astype(np.float32) / 32768.0
-        ambient_noise_np = np.frombuffer(ambient_noise, np.int16).astype(np.float32) / 32768.0
+    def transcribe(self):
+        """
+        Function to transcribe audio from the microphone. Stops when no speech is detected.
+        """
+        print("Listening until silence is detected.")
 
-        # Use ambient noise as noise profile
-        reduced_noise = nr.reduce_noise(y=audio_np, sr=self.sample_rate, y_noise=ambient_noise_np)
+        audio_data = self.listen_to_microphone()
 
-        # Convert back to int16 after noise reduction for compatibility with Whisper
-        reduced_noise_int16 = (reduced_noise * 32768).astype(np.int16)
-
-        return reduced_noise_int16.tobytes()  # Return as bytes
-
-    def transcribe(self, audio_data):
-        """Transcribe the audio data using the selected model."""
+        # Transcription logic here
         if self.model_name == "whisper":
-            # Whisper expects float32 audio data
             energy_threshold = 0.0001
-            # Convert int16 PCM audio data to float32
             audio_np = np.frombuffer(audio_data, np.int16).astype(np.float32) / 32768.0
-
-            # Calculate energy of the audio to determine if it should be transcribed
             energy = np.mean(np.abs(audio_np))
-
-            # Only transcribe if energy exceeds the threshold
             if energy > energy_threshold:
-                # Transcribe using Whisper model (assumed to be already loaded in self.whisper_model)
                 segments, _ = self.whisper_model.transcribe(audio_np, beam_size=5)
                 transcription = " ".join([segment.text for segment in segments])
                 print(f"Whisper Transcription: {transcription}")
                 return transcription
-            else:
-                print("Audio energy below threshold; no transcription performed.")
-                return ""
         else:
-            # Google SpeechRecognition code (no changes here)
-            recognizer = sr.Recognizer()
-            audio_buffer = io.BytesIO()
-
-            with wave.open(audio_buffer, 'wb') as wav_file:
-                wav_file.setnchannels(1)  # Assuming mono audio
-                wav_file.setsampwidth(2)  # Assuming 16-bit audio
-                wav_file.setframerate(16000)  # Assuming 16kHz sample rate
-                wav_file.writeframes(audio_data)  # Write raw PCM data
-
-            # Reset the buffer's position to the start
-            audio_buffer.seek(0)
-
-            # Use SpeechRecognition's AudioFile to handle the in-memory WAV file
-            with sr.AudioFile(audio_buffer) as source:
-                audio = recognizer.record(source)
+            with self.microphone as source:
                 try:
-                    transcription = recognizer.recognize_google(audio)
+                    audio = sr.AudioData(audio_data, self.sample_rate, 2)
+                    transcription = self.recognizer.recognize_google(audio)
                     print(f"Google Transcription: {transcription}")
                     return transcription
-                except sr.UnknownValueError:
-                    print("Google could not understand audio")
-                    return ""
-                except sr.RequestError as e:
-                    print(f"Could not request results; {e}")
-                    return ""
-
-
-    def listen(self, time_listen=8):
-        """Main transcoder function that handles listening, noise cancellation, and transcription."""
-        # Listen to the microphone and get both raw audio and ambient noise
-        raw_audio, ambient_noise = self.listen_to_microphone(time_listen)
-        
-        # Apply noise cancellation using the ambient noise from the first 2 seconds
-        clean_audio = self.apply_noise_cancellation(raw_audio, ambient_noise=ambient_noise)
-        
-        # Transcribe the clean audio
-        transcription = self.transcribe(clean_audio)
-        
-        return transcription
-
-    def glitch_stream_output(self, text):
-        def change_pitch(sound, octaves):
-            val = random.randint(0, 10)
-            if val == 1:
-                new_sample_rate = int(sound.frame_rate * (2.0 ** octaves))
-                return sound._spawn(sound.raw_data, overrides={'frame_rate': new_sample_rate}).set_frame_rate(sound.frame_rate)
-            else:
-                return sound
-
-        def convert_audio_format(sound, target_sample_rate=16000):
-            # Ensure the audio is in PCM16 format
-            sound = sound.set_sample_width(2)  # PCM16 = 2 bytes per sample
-            # Resample the audio to the target sample rate
-            sound = sound.set_frame_rate(target_sample_rate)
-            return sound
-
-        # Example parameters
-        voice = "maxheadroom_00000045.wav"
-        language = "en"
-        output_file = "stream_output.wav"
-        
-        # Encode the text for URL
-        encoded_text = urllib.parse.quote(text)
-        
-        # Create the streaming URL
-        streaming_url = f"http://localhost:7851/api/tts-generate-streaming?text={encoded_text}&voice={voice}&language={language}&output_file={output_file}"
-        try:
-            # Stream the audio data
-            response = requests.get(streaming_url, stream=True)
-            
-            # Initialize PyAudio
-            p = pyaudio.PyAudio()
-            stream = None
-            
-            # Process the audio stream in chunks
-            chunk_size = 1024 * 6  # Adjust chunk size if needed
-            audio_buffer = b''
-
-            for chunk in response.iter_content(chunk_size=chunk_size):
-                audio_buffer += chunk
-
-                if len(audio_buffer) < chunk_size:
-                    continue
+                except:
+                    pass
                 
-                audio_segment = AudioSegment(
-                    data=audio_buffer,
-                    sample_width=2,  # 2 bytes for 16-bit audio
-                    frame_rate=24000,  # Assumed frame rate, adjust as necessary
-                    channels=1  # Assuming mono audio
-                )
-
-                # Randomly adjust pitch
-                octaves = random.uniform(-0.1, 1.5)
-                modified_chunk = change_pitch(audio_segment, octaves)
-
-                if random.random() < 0.001:  # 1% chance to trigger stutter
-                    repeat_times = random.randint(2, 5)  # Repeat 2 to 5 times
-                    for _ in range(repeat_times):
-                        stream.write(modified_chunk.raw_data)
-
-                # Convert to PCM16 and 16kHz sample rate after the stutter effect
-                modified_chunk = convert_audio_format(modified_chunk, target_sample_rate=16000)
-
-                if stream is None:
-                    # Define stream parameters
-                    stream = p.open(format=pyaudio.paInt16,
-                                    channels=1,
-                                    rate=modified_chunk.frame_rate,
-                                    output=True)
-
-                # Play the modified chunk
-                stream.write(modified_chunk.raw_data)
-
-                # Reset buffer
-                audio_buffer = b''
-
-            # Final cleanup
-            if stream:
-                stream.stop_stream()
-                stream.close()
-            p.terminate()
-        except:
-            self.engine.say(text)
-            self.engine.runAndWait()
-            
     def stream(self, text):
         # Example parameters
-        voice = ""
+        voice = self.voice
         language = "en"
         output_file = "stream_output.wav"
         
@@ -281,9 +173,6 @@ class Speak:
         except:
             self.engine.say(text)
             self.engine.runAndWait()
+        
 
-            
-# Example usage:
-# sp = Speak(model="whisper")  # or "whisper" or "google"
-# transcription = sp.transcoder(time_listen=10)
-# print("Final Transcription:", transcription)
+        
