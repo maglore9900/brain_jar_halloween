@@ -3,3 +3,5 @@ wake = ["Must you always interrupt my centuries of contemplation?","A millennium
 pause = ["Hmmm... give me a moment...","Mmm... let me ponder that...","Hmmm... now, where was I?","Ahh... let me consider this...","Hmm... I need a moment to reflect...","Mmm... allow me to think for a second...","Hmmm... let's see here...","Hmmm... I need to mull this over...","Hmm... let me wrap my mind around it...","Ahh... give me a minute to gather my thoughts..."]
 
 sleep = ["Hmm... I think I'll return to my slumber now.","Ahh... back to sleep I go...","Mmm... time to drift off again.","Hmm... I suppose it's time to resume my rest.","Ugh... I'll be returning to my dreams, if you don't mind.","Hmph... back to sleep, where I belong.","Ahh... I shall go back to my well-deserved rest.","Mmm... time to reclaim my sleep...","Hmm... I'll be slipping back into the void now.","Hah... now, if you’ll excuse me, I’m going back to bed."]
+
+blast = ["Confound it!","Curse this nonsense!","Drat it all!","Blasted foolishness!","For pity’s sake!","Bah, ridiculous!","Nonsense, I say!","By the heavens, enough!","Rubbish, pure rubbish!"]
