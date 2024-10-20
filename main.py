@@ -33,7 +33,8 @@ def log_data(data, file_path="./logs"):
         
 def speak_and_print(text):
     print(text)
-    spk.stream(text) if spk_enabled else None
+    # spk.stream(text) if spk_enabled else None
+    spk.vox(text) if spk_enabled else None
     
 def go_to_sleep(text):
     if "back" in text.lower() and "sleep" in text.lower():
@@ -108,5 +109,7 @@ while True:
     elif text and "exit" in text.lower():
         print("Exiting...")
         break
+
+
 
 
