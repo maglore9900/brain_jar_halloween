@@ -56,3 +56,14 @@ All of the easy configuration is done in the .env file. This section will explai
 #STREAM SPEAK URL is using the default url for Alltalk. If you dont have all talk you can ignore this, if you want to use a different service, simply replace the url. Even without Alltalk this can respond in a robotic voice.
 
 `STREAM_SPEAK_URL = 'http://127.0.0.1:7851/api/tts-generate'`
+
+# Commands
+
+1. **Awaken Dr Brain** to start
+
+2) Answer his first question about a subject **Yes** or **No**
+
+3. If Yes, he will ask for a name and favorite monster, once he gets that he will make up a nickname
+4. If No, he will be grump, but you can ask him anything
+5. At any time you can put him back to sleep with **Go Back to Sleep Dr Brain**
+6. If Dr Brain is sleeping and you say **Exit** he will turn off completely. This exits the script.
