@@ -556,7 +556,7 @@ class Speak:
     #     )
         
     #     return combined_segment
-    def mix_audio_segments(self, audio_segment, spooky_segment, spooky_boost_factor=0.8):
+    def mix_audio_segments(self, audio_segment, spooky_segment, spooky_boost_factor=0.7):
         """
         Manually combine two audio segments by mixing their samples, ensuring they have the same frame rate and length.
         Apply a volume boost to the spooky segment.
@@ -580,7 +580,7 @@ class Speak:
         return combined_segment
 
 
-    def apply_whisper_effect(self, audio_segment, white_noise_gain=-45, speech_gain=2, noise_layers=2):
+    def apply_whisper_effect(self, audio_segment, white_noise_gain=-45, speech_gain=1, noise_layers=2):
         """
         Modify the audio segment to sound like a whisper.
         - Apply a high-pass filter to remove low frequencies.

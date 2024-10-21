@@ -78,8 +78,8 @@ while True:
                                 response = ad.llm_chat.invoke(char_prompt.format(query=nickname))
                                 if response:
                                     log_data(f"Dr. Brain | {response.content}")
-                                    speak_and_print(response.content)
-                                    speak_and_print(f"One more subject for the Department of {random.choice(dialogue.department)}. Subject {subject_number}, {random.choice(dialogue.attend)} {random.choice(dialogue.classes)} class.")
+                                    speak_and_print((response.content)+f"One more subject for the Department of {random.choice(dialogue.department)}. Subject {subject_number}, {random.choice(dialogue.attend)} {random.choice(dialogue.classes)} class.")
+
                                     answer = True
                     elif "no" in decision.lower():
                         no_subject = f"{random.choice(dialogue.blast)} ... Astra Mor Technician, ask you're question already!"
