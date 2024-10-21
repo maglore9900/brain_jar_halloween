@@ -11,3 +11,4 @@ plyer
 noisereduce
 faster-whisper
 pydub
+numpy
