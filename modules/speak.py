@@ -109,7 +109,7 @@ class Speak:
                 try:
                     audio = sr.AudioData(audio_data, self.sample_rate, 2)
                     transcription = self.recognizer.recognize_google(audio)
-                    print(f"Google Transcription: {transcription}")
+                    print(f"Dr. Brain: {transcription}")
                     return transcription
                 except:
                     pass
