@@ -7,7 +7,7 @@ INSTALLATION
 so basically the steps are pretty simple
 
 1. download the code (clone it or download it and unzip it)
-2. install python 3.10 on the system
+2. install python **3.12** on the system
 3. create a virtual environment using `python -m venv .` in the folder/dir of the code
 4. activate the environment with `Scripts\activate.bat` on windows or `source bin/activate` on linux
 5. run pip install to install all the required modules `pip install -r requirements_windows.txt`
@@ -59,11 +59,11 @@ All of the easy configuration is done in the .env file. This section will explai
 
 # Commands
 
-1. **Awaken Dr Brain** to start
+1. "A**wake**n **Dr Brain**" to start
 
-2) Answer his first question about a subject **Yes** or **No**
+2) Answer his first question about a subject "**Yes**" or "**No**"
 
 3. If Yes, he will ask for a name and favorite monster, once he gets that he will make up a nickname
-4. If No, he will be grump, but you can ask him anything
-5. At any time you can put him back to sleep with **Go Back to Sleep Dr Brain**
-6. If Dr Brain is sleeping and you say **Exit** he will turn off completely. This exits the script.
+4. If No, he will be grumpy, but you can ask him anything
+5. At any time you can put him back to sleep with "Go **Back** to **Sleep** Dr Brain"
+6. If Dr Brain is sleeping and you say "**Exit**" he will turn off completely. This exits the script.
