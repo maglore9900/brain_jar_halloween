@@ -32,6 +32,7 @@ def log_data(data, file_path="./logs"):
         file.write(f"{datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')} | {data}\n")
         
 def speak_and_print(text):
+    text = text.replace("...", ".")
     print(text)
     # spk.stream(text) if spk_enabled else None
     spk.vox(text) if spk_enabled else None
@@ -43,73 +44,131 @@ def go_to_sleep(text):
         speak_and_print(go_sleep)
         return True
         
+# while True:
+#     #loop 1
+#     answer = False
+#     text = spk.transcribe()
+#     if text and env("WAKE_WORD").lower() in text.lower() and env("CHARACTER").lower() in text.lower():
+#         if "wake" in text.lower():
+#             print("Waking up...")
+#             log_data(f"User | {text}")
+#             wake_up = f"{random.choice(dialogue.wake)} ... Astra Mor Technician, who approaches? ... A new test subject?"
+#             log_data(f"Dr. Brain | {wake_up}")
+#             speak_and_print(wake_up)
+#             #!loop 2
+#             while answer is False:
+#                 decision = spk.transcribe()
+#                 if decision:
+#                     log_data(f"User | {decision}")
+#                     if "yes" in decision.lower():
+#                         subject_number = random.randint(111,888)
+#                         subject = f"{random.choice(dialogue.splendid)} Subject {subject_number}, what is your name and favorite monster?"
+#                         log_data(f"Dr. Brain | {subject}")
+#                         speak_and_print(subject)
+#                         #!loop 3
+#                         while answer is False:
+#                             name_monster = spk.transcribe()
+#                             if name_monster:
+#                                 log_data(f"User | {name_monster}")
+#                                 #!Sleep
+#                                 if go_to_sleep(name_monster):
+#                                     answer = True
+#                                     break
+#                                 speak_and_print(f"{random.choice(dialogue.pause)}")
+#                                 nickname = "create a cool nickname which includes: " + name_monster
+#                                 response = ad.llm_chat.invoke(char_prompt.format(query=nickname))
+#                                 if response:
+#                                     log_data(f"Dr. Brain | {response.content}")
+#                                     speak_and_print((response.content)+f"One more subject for the Department of {random.choice(dialogue.department)}. Subject {subject_number}, {random.choice(dialogue.attend)} {random.choice(dialogue.classes)} class.")
+
+#                                     answer = True
+#                     elif "no" in decision.lower():
+#                         no_subject = f"{random.choice(dialogue.blast)} ... Astra Mor Technician, ask you're question already!"
+#                         log_data(f"Dr. Brain | {no_subject}")
+#                         speak_and_print(no_subject)
+#                         #!loop 3
+#                         while answer is False:
+#                             question = spk.transcribe()
+#                             if question:
+#                                 log_data(f"User | {question}")
+#                                 #!Sleep
+#                                 if go_to_sleep(question):
+#                                     answer = True
+#                                     break
+#                                 response = ad.llm_chat.invoke(char_prompt.format(query=question))
+#                                 if response:
+#                                     log_data(f"Dr. Brain | {response.content}")
+#                                     speak_and_print(f"{random.choice(dialogue.pause)}")
+#                                     speak_and_print(response.content)
+#                                     answer = True
+#                     #!Sleep
+#                     elif go_to_sleep(decision):
+#                         answer = True
+#                         break
+#                     else:
+#                         speak_and_print("Please answer yes or no.")
+#     elif text and "exit" in text.lower():
+#         print("Exiting...")
+#         break
+
+
+
+#loop 1
+
 while True:
-    #loop 1
     answer = False
     text = spk.transcribe()
-    if text and env("WAKE_WORD").lower() in text.lower() and env("CHARACTER").lower() in text.lower():
-        if "wake" in text.lower():
+    if text and "wake" in text.lower() and env("CHARACTER").lower() in text.lower():
+        if "subject" in text.lower():
             print("Waking up...")
             log_data(f"User | {text}")
-            wake_up = f"{random.choice(dialogue.wake)} ... Astra Mor Technician, who approaches? ... A new test subject?"
-            log_data(f"Dr. Brain | {wake_up}")
-            speak_and_print(wake_up)
-            #!loop 2
+            subject_number = random.randint(111,888)
+            subject = f"{random.choice(dialogue.wake)} ... Subject {subject_number}, what is your name and favorite monster?"
+            log_data(f"Dr. Brain | {subject}")
+            speak_and_print(subject)
+            #!loop 3
             while answer is False:
-                decision = spk.transcribe()
-                if decision:
-                    log_data(f"User | {decision}")
-                    if "yes" in decision.lower():
-                        subject_number = random.randint(111,888)
-                        subject = f"{random.choice(dialogue.splendid)} Subject {subject_number}, what is your name and favorite monster?"
-                        log_data(f"Dr. Brain | {subject}")
-                        speak_and_print(subject)
-                        #!loop 3
-                        while answer is False:
-                            name_monster = spk.transcribe()
-                            if name_monster:
-                                log_data(f"User | {name_monster}")
-                                #!Sleep
-                                if go_to_sleep(name_monster):
-                                    answer = True
-                                    break
-                                speak_and_print(f"{random.choice(dialogue.pause)}")
-                                nickname = "create a cool nickname which includes: " + name_monster
-                                response = ad.llm_chat.invoke(char_prompt.format(query=nickname))
-                                if response:
-                                    log_data(f"Dr. Brain | {response.content}")
-                                    speak_and_print((response.content)+f"One more subject for the Department of {random.choice(dialogue.department)}. Subject {subject_number}, {random.choice(dialogue.attend)} {random.choice(dialogue.classes)} class.")
-
-                                    answer = True
-                    elif "no" in decision.lower():
-                        no_subject = f"{random.choice(dialogue.blast)} ... Astra Mor Technician, ask you're question already!"
-                        log_data(f"Dr. Brain | {no_subject}")
-                        speak_and_print(no_subject)
-                        #!loop 3
-                        while answer is False:
-                            question = spk.transcribe()
-                            if question:
-                                log_data(f"User | {question}")
-                                #!Sleep
-                                if go_to_sleep(question):
-                                    answer = True
-                                    break
-                                response = ad.llm_chat.invoke(char_prompt.format(query=question))
-                                if response:
-                                    log_data(f"Dr. Brain | {response.content}")
-                                    speak_and_print(f"{random.choice(dialogue.pause)}")
-                                    speak_and_print(response.content)
-                                    answer = True
+                name_monster = spk.transcribe()
+                if name_monster:
+                    log_data(f"User | {name_monster}")
                     #!Sleep
-                    elif go_to_sleep(decision):
+                    if go_to_sleep(name_monster):
                         answer = True
                         break
-                    else:
-                        speak_and_print("Please answer yes or no.")
+                    speak_and_print(f"{random.choice(dialogue.pause)}")
+                    nickname = "create a cool nickname which includes: " + name_monster
+                    response = ad.llm_chat.invoke(char_prompt.format(query=nickname))
+                    if response:
+                        log_data(f"Dr. Brain | {response.content}")
+                        speak_and_print((response.content)+f"One more subject for the Department of {random.choice(dialogue.department)}. Subject {subject_number}, {random.choice(dialogue.attend)} {random.choice(dialogue.classes)} class.")
+                        answer = True
+        elif "question" in text.lower():
+            print("Waking up...")
+            log_data(f"User | {text}")
+            no_subject = f"{random.choice(dialogue.wake)} ... {random.choice(dialogue.blast)} ... ask you're question already!"
+            log_data(f"Dr. Brain | {no_subject}")
+            speak_and_print(no_subject)
+            #!loop 3
+            while answer is False:
+                question = spk.transcribe()
+                if question:
+                    log_data(f"User | {question}")
+                    #!Sleep
+                    if go_to_sleep(question):
+                        answer = True
+                        break
+                    response = ad.llm_chat.invoke(char_prompt.format(query=question))
+                    if response:
+                        log_data(f"User | {response.content}")
+                        speak_and_print(f"{random.choice(dialogue.pause)}")
+                        speak_and_print(response.content)
+                        answer = True
+                #!Sleep
+                elif go_to_sleep(decision):
+                    answer = True
+                    break
+                else:
+                    speak_and_print("Please answer yes or no.")
     elif text and "exit" in text.lower():
         print("Exiting...")
         break
-
-
-
-
